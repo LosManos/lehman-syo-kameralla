@@ -35,7 +35,17 @@ document.addEventListener('DOMContentLoaded', () => {
             stopScanning();
         }
 
+        // Reset Generator view state when switching
         if (tab === 'generate') {
+            inputData.disabled = false;
+            // Only clear if it was combined data, or keep it? 
+            // Better to keep it unless the user wants to clear it, 
+            // but we must ensure it's editable.
+            if (inputData.value.includes('[Combined Data Active]')) {
+                inputData.value = '';
+                qrDisplayContainer.classList.add('hidden');
+            }
+            
             tabGenerate.classList.add('active');
             tabScan.classList.remove('active');
             
@@ -99,23 +109,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnGenerate.addEventListener('click', () => {
         const textToShare = inputData.value.trim();
-        if (!textToShare && !inputData.value.includes('[Combined Data Active]')) {
+        if (!textToShare) {
             alert("Please enter some data to generate a QR code.");
             return;
         }
 
-        // Only override if we are user A
-        let payloadStr = "";
-        if (!inputData.value.includes('[Combined Data Active]')) {
-             const payload = { a: textToShare };
-             payloadStr = JSON.stringify(payload);
-        } else {
-             // We use the combined payload from augmentation
-             // But for safety, keep the last one generated
-             // We handle this more robustly below, but for now we'll just ignore if it's combined
-             // assuming we already generated it.
-             return; 
-        }
+        const payload = { a: textToShare };
+        const payloadStr = JSON.stringify(payload);
 
         // Render 
         qrDisplayContainer.classList.remove('hidden');
@@ -237,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show QR
         qrDisplayContainer.classList.remove('hidden');
         inputData.value = `[Combined Data Active]\n\nUser A: ${combinedPayload.a}\nUser B: ${combinedPayload.b}`;
-        inputData.disabled = true; // Lock it since it's combined
         
         createBeautifulQR(payloadStr);
         
